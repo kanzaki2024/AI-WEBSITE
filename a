@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BINGO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin-top: 50px;
+        }
+        #container {
+            display: flex;
+            justify-content: space-between; /* 左右に配置 */
+            align-items: flex-start;
+            margin: 0 10%;
+        }
+        #generated-numbers-container {
+            width: 45%; /* 左側の幅 */
+        }
+        #bingo-number-container {
+            width: 45%; /* 右側の幅 */
+            text-align: center;
+        }
+        #bingo-number {
+            font-size: 240px; /* 数字を大きく */
+            margin: 40px 0; /* 上下に大きなマージンを追加 */
+            height: 300px;
+            line-height: 300px;
+            font-weight: bold;
+            color: #333;
+        }
+        #generated-numbers {
+            margin-top: 40px; /* 上に大きなマージンを追加 */
+            display: flex;
+            justify-content: space-between;
+        }
+        .number-column {
+            width: 18%; /* 列幅 */
+            display: inline-block;
+            vertical-align: top;
+            text-align: center;
+        }
+        .number-column h3 {
+            font-size: 80px; /* 「BINGO」の文字サイズ */
+            margin: 0;
+            padding: 0;
+            letter-spacing: 30px; /* 文字間隔を広げる */
+        }
+        .number-box {
+            display: inline-block;
+            width: 60px; /* 出た数字の表示を小さく */
+            height: 60px;
+            line-height: 60px;
+            margin: 5px;
+            font-size: 40px; /* 数字のフォントサイズ */
+            font-weight: bold;
+            color: black; /* 数字の色を黒に */
+            border-radius: 10px;
+            text-align: center;
+            border: 3px solid; /* 枠線の色をランダムに設定 */
+            background-color: transparent; /* 背景色は透過 */
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">BINGO</h1>
+
+    <div id="container">
+        <!-- 左側：今まで出た数字 -->
+        <div id="generated-numbers-container">
+            <div id="generated-numbers">
+                <div class="number-column" id="b-column">
+                    <h3>B</h3>
+                    <div id="b-numbers"></div> <!-- 出た数字を追加 -->
+                </div>
+                <div class="number-column" id="i-column">
+                    <h3>I</h3>
+                    <div id="i-numbers"></div> <!-- 出た数字を追加 -->
+                </div>
+                <div class="number-column" id="n-column">
+                    <h3>N</h3>
+                    <div id="n-numbers"></div> <!-- 出た数字を追加 -->
+                </div>
+                <div class="number-column" id="g-column">
+                    <h3>G</h3>
+                    <div id="g-numbers"></div> <!-- 出た数字を追加 -->
+                </div>
+                <div class="number-column" id="o-column">
+                    <h3>O</h3>
+                    <div id="o-numbers"></div> <!-- 出た数字を追加 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：新しい番号 -->
+        <div id="bingo-number-container">
+            <div id="bingo-number">0</div>
+        </div>
+    </div>
+
+    <!-- ルーレット音を再生するための音声ファイル -->
+    <audio id="roulette-sound" src="https://www.youtube.com/watch?v=9gnhBNO64Fc"></audio>
+
+    <script>
+        // ビンゴ番号のリスト（1〜75）
+        let bingoNumbers = Array.from({length: 75}, (_, i) => i + 1);
+        // 出た番号を保持するリスト
+        let generatedNumbers = {
+            B: [],
+            I: [],
+            N: [],
+            G: [],
+            O: []
+        };
+
+        // 色のリスト
+        const colors = ["#ff6b6b", "#f7c6c7", "#f5a623", "#f3b5b5", "#a1c4fd", "#ff8a80", "#ffab91", "#ffcc80", "#dce775", "#c5e1a5"];
+
+        // ルーレットアニメーションのための変数
+        let rouletteInterval;
+        let isSpinning = false; // ルーレットが回転中かどうか
+        const rouletteSound = document.getElementById('roulette-sound'); // 音声要素の取得
+
+        // ページクリックで番号を生成するイベントリスナー
+        document.addEventListener('click', () => {
+            if (!isSpinning) {
+                startRoulette();
+            }
+        });
+
+        function startRoulette() {
+            if (bingoNumbers.length === 0) {
+                alert("すべての番号が出ました！");
+                return;
+            }
+
+            isSpinning = true; // ルーレットが回転中であることを示す
+
+            // ルーレット音を再生
+            rouletteSound.play();
+
+            // ルーレット開始
+            rouletteInterval = setInterval(() => {
+                document.getElementById('bingo-number').textContent = Math.floor(Math.random() * 75) + 1;
+            }, 50);
+
+            // 一定時間後にルーレットを止めて最終的な番号を表示
+            setTimeout(() => {
+                stopRoulette();
+            }, 2000); // 2秒間ルーレット
+        }
+
+        function stopRoulette() {
+            clearInterval(rouletteInterval);
+            isSpinning = false; // ルーレットが停止したことを示す
+
+            // ルーレット音を停止
+            rouletteSound.pause();
+            rouletteSound.currentTime = 0; // 再生位置をリセット
+
+            // ランダムな番号を選ぶ
+            const randomIndex = Math.floor(Math.random() * bingoNumbers.length);
+            const selectedNumber = bingoNumbers[randomIndex];
+            const column = getColumn(selectedNumber);
+
+            // 出た番号が重複しないようにチェック
+            if (!generatedNumbers[column].includes(selectedNumber)) {
+                // 選んだ番号を画面に表示
+                document.getElementById('bingo-number').textContent = selectedNumber;
+
+                // 出た番号をリストに追加
+                generatedNumbers[column].push(selectedNumber);
+
+                // リストから削除
+                bingoNumbers.splice(randomIndex, 1);
+
+                // 出た数字にランダムな枠線と背景色を設定
+                displayGeneratedNumbers();
+            } else {
+                // すでに出た番号だった場合は再度生成
+                stopRoulette();
+            }
+        }
+
+        function getColumn(number) {
+            if (number <= 15) return 'B';
+            if (number <= 30) return 'I';
+            if (number <= 45) return 'N';
+            if (number <= 60) return 'G';
+            return 'O';
+        }
+
+        function displayGeneratedNumbers() {
+            Object.keys(generatedNumbers).forEach(column => {
+                const container = document.getElementById(`${column.toLowerCase()}-numbers`);
+                container.innerHTML = ''; // 一旦クリア
+
+                // 数字をソートして表示
+                generatedNumbers[column].sort((a, b) => a - b).forEach(num => {
+                    const numberBox = document.createElement('div');
+                    numberBox.className = 'number-box';
+                    numberBox.textContent = num;
+                    const borderColor = getRandomColor(); // ランダムな枠線の色を設定
+                    numberBox.style.borderColor = borderColor; // 枠線の色を設定
+                    container.appendChild(numberBox);
+                });
+            });
+        }
+
+        function getRandomColor() {
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+    </script>
+</body>
+</html>
